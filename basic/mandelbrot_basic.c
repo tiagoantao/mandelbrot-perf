@@ -1,9 +1,13 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <glib.h>
 
+#include <ymir/graphics.h>
 
-void draw_mandelbrot(int *area, int width, int height) {
+
+void draw_mandelbrot(uint8_t* area, int width, int height) {
     int x, y;
     int max_iter = 1000;
     double cx, cy;
@@ -31,8 +35,9 @@ void draw_mandelbrot(int *area, int width, int height) {
 
 
 int main(int argc, char *argv[]) {
-    GError *error = NULL;
-    GOptionContext *context;
+    GError* error = NULL;
+    GOptionContext* context;
+    uint8_t* mandel_area;
 
     int width = 640;
     int height = 480;
@@ -54,8 +59,19 @@ int main(int argc, char *argv[]) {
     g_option_context_free(context);
 
     printf("Width: %d, Height: %d\n", width, height);
-    mandel_area = malloc(sizeof(int) * width * height);
+    mandel_area = malloc(sizeof(uint8_t) * width * height);
     draw_mandelbrot(mandel_area, width, height);
+
+    pixel_t** image = alloc_image(height, width);
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            image[y][x] = (pixel_t) { .r = mandel_area[y * width + x], .g = 0, .b = 0 };
+        }
+    }
+    write_png("out.png", image, height, width);
+    free_image(image, height);
+
+    free(mandel_area);
 
     return 0;
 }
