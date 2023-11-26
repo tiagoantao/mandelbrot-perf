@@ -1,15 +1,12 @@
-#include <stdint.h>
+#include "shared.h"
+
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <glib.h>
-
-#include <ymir/graphics.h>
 
 #define MAX_ITER 1000
 
 
-int compute_mandelbrot(double cx, double cy) {
+int compute_mandelbrot_point(double cx, double cy) {
     double zx, zy, zx2, zy2;
     zx = 0.0;
     zy = 0.0;
@@ -27,7 +24,8 @@ int compute_mandelbrot(double cx, double cy) {
 }
 
 
-void draw_mandelbrot(uint8_t* area, int width, int height) {
+uint8_t* compute_all_mandelbrot(int width, int height) {
+    uint8_t* area = malloc(sizeof(uint8_t) * width * height);
     int x, y;
     double cx, cy;
     for (y = 0; y < height; y++) {
@@ -35,49 +33,22 @@ void draw_mandelbrot(uint8_t* area, int width, int height) {
         for (x = 0; x < width; x++) {
             cx = ((double)x / width) * 4.0 - 2.0;
             int iter;
-            iter = compute_mandelbrot(cx, cy);
+            iter = compute_mandelbrot_point(cx, cy);
             area[y * width + x] = iter;
         }
     }
+    return area;
 }
 
 
 int main(int argc, char *argv[]) {
-    GError* error = NULL;
-    GOptionContext* context;
     uint8_t* mandel_area;
+    ScreenSize screen_size = get_screen_size(argc, argv);
 
-    int width = 640;
-    int height = 480;
+    printf("Width: %d, Height: %d\n", screen_size.width, screen_size.height);
+    mandel_area = compute_all_mandelbrot(screen_size.width, screen_size.height);
 
-    GOptionEntry entries[] = {
-        { "width", 'w', 0, G_OPTION_ARG_INT, &width, "Width of the area", "WIDTH" },
-        { "height", 'h', 0, G_OPTION_ARG_INT, &height, "Height of the area", "DEPTH" },
-        { NULL }
-    };
-
-    context = g_option_context_new("Basic Mandelbrot");
-    g_option_context_add_main_entries(context, entries, NULL);
-
-    if (!g_option_context_parse(context, &argc, &argv, &error)) {
-        g_print("option parsing failed: %s\n", error->message);
-        exit(1);
-    }
-
-    g_option_context_free(context);
-
-    printf("Width: %d, Height: %d\n", width, height);
-    mandel_area = malloc(sizeof(uint8_t) * width * height);
-    draw_mandelbrot(mandel_area, width, height);
-
-    pixel_t** image = alloc_image(height, width);
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            image[y][x] = (pixel_t) { .r = mandel_area[y * width + x], .g = 0, .b = 0 };
-        }
-    }
-    write_png("out.png", image, height, width);
-    free_image(image, height);
+    write_mandel_image("basic.png", screen_size, mandel_area);
 
     free(mandel_area);
 
