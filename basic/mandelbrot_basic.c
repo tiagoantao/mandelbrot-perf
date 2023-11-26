@@ -6,28 +6,36 @@
 
 #include <ymir/graphics.h>
 
+#define MAX_ITER 1000
+
+
+int compute_mandelbrot(double cx, double cy) {
+    double zx, zy, zx2, zy2;
+    zx = 0.0;
+    zy = 0.0;
+    zx2 = zx * zx;
+    zy2 = zy * zy;
+    int iter = 0;
+    while (iter < MAX_ITER && zx2 + zy2 < 4.0) {
+        zy = 2.0 * zx * zy + cy;
+        zx = zx2 - zy2 + cx;
+        zx2 = zx * zx;
+        zy2 = zy * zy;
+        iter++;
+    }
+    return iter;
+}
+
 
 void draw_mandelbrot(uint8_t* area, int width, int height) {
     int x, y;
-    int max_iter = 1000;
     double cx, cy;
-    double zx, zy, zx2, zy2;
     for (y = 0; y < height; y++) {
         cy = ((double)y / height) * 4.0 - 2.0;
         for (x = 0; x < width; x++) {
             cx = ((double)x / width) * 4.0 - 2.0;
-            zx = 0.0;
-            zy = 0.0;
-            zx2 = zx * zx;
-            zy2 = zy * zy;
-            int iter = 0;
-            while (iter < max_iter && zx2 + zy2 < 4.0) {
-                zy = 2.0 * zx * zy + cy;
-                zx = zx2 - zy2 + cx;
-                zx2 = zx * zx;
-                zy2 = zy * zy;
-                iter++;
-            }
+            int iter;
+            iter = compute_mandelbrot(cx, cy);
             area[y * width + x] = iter;
         }
     }
